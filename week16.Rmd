@@ -50,9 +50,9 @@ violation_data %>% ggplot(aes(y = count, x = reorder(name, count), fill = total_
   geom_col() + 
   xlab("Country") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  ggtitle("Total number of cases and fine price per country") +
+  ggtitle("Total number of cases and fine per country") +
   coord_flip() + 
-    scale_fill_gradient( low = c("#87CEFA"), high = c("#000080"), name = "Total fine price", labels =  dollar_format(suffix = "€", prefix = ""))+
+    scale_fill_gradient( low = c("#87CEFA"), high = c("#000080"), name = "Total fine", labels =  dollar_format(suffix = "€", prefix = ""))+
   ylab("Number of cases") +
   geom_text(aes(label = paste0(total_price,"€")), hjust = 0.001) +
   scale_y_continuous(limits = c(0,80),breaks = c(0,20,40,60,80))
