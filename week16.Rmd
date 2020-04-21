@@ -1,0 +1,73 @@
+---
+title: "week 16 tidytuesday"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+
+
+```{r data import}
+#gdpr_violations <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-21/gdpr_violations.tsv')
+#gdpr_text <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-21/gdpr_text.tsv')
+
+```
+
+
+```{r}
+gdpr_violations <- read.csv("gdprviolations.csv")
+gdpr_text <- read.csv("gdprtext.csv")
+```
+
+
+```{r Loading libraries}
+library(tidyverse)
+library(lubridate)
+library(scales)
+```
+
+
+## Dat transformation 
+
+```{r}
+gdpr_violations$date <- as.POSIXct.Date(gdpr_violations$date)
+
+ violation_data <- gdpr_violations  %>% 
+  mutate(month = lubridate::month(gdpr_violations$date)) %>% 
+  group_by(name)  %>% summarise( total_price = sum(price), count = n()) %>% 
+  as.data.frame() %>% select(name, total_price, count)
+
+ head(violation_data)
+```
+
+
+## Exploring relationship between Total fine price and the cases of violation per country
+
+Is it safe to assume that the higher the  total number of violation cases in a country the hefty the fine price?
+its interesting to note that countries such as France, Italy and Austria were among the countries that recorded the least number of cases
+but then their fine price ranked top most, as such, the higher the total number of violation cases does not necessarily mean a resulting high fine price and vice versa.
+
+Is there some correlation between the total number of violation cases in a country and the total fine price?
+
+
+```{r}
+violation_data %>% ggplot(aes(y = count, x = reorder(name, count), fill = total_price)) + 
+  geom_col() + 
+  xlab("Country") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Total number of cases and fine price per country") +
+  coord_flip() + 
+    scale_fill_gradient( low = c("#87CEFA"), high = c("#000080"), name = "Total fine price", labels =  dollar_format(suffix = "€", prefix = ""))+
+  ylab("Number of cases") +
+  geom_text(aes(label = paste0(total_price,"€")), hjust = 0.001) +
+  scale_y_continuous(limits = c(0,80),breaks = c(0,20,40,60,80))
+ 
+
+```
+
+
+```{r}
+ggsave("violation_plot.png")
+```
+
