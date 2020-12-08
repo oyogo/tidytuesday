@@ -1,0 +1,118 @@
+---
+title: "Tidytuesday week 50"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+# Women of 2020
+Data for this week's tidytuesday challenge comes from BBC. It has a list of 100 inspiring and influential women from around the world for 2020.
+These are women who are leading change and making a difference during these turbulent times.
+
+I'd like to do some visualization to try and make some deductions from the data as I flex my data visualization skills in this tidytuesday challenge.
+
+## Data import
+```{r}
+women <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-08/women.csv')
+```
+
+## Loading libraries
+```{r}
+library(data.table)
+library(plotly)
+library(ggplot2)
+library(stringr)
+library(packcircles)
+```
+
+
+## Which category of a ward had the highest count of influencial women
+I'll use data.table library to count the number of women by category and then use the table to visualize the counts.
+I'll also calculate the percentages using the counts.
+I excluded the first record considering it was left as a tribute and so it doesn't have a category. 
+```{r}
+category_count <- data.table::data.table(women)[2:100,.(percentage=round(100*.N/nrow(women),0)),by=category]
+```
+
+## Bubble chart showing the percentage count of women per category
+which category of award had the highest count of influential women in 2020?
+
+### Plotly bubble chart
+```{r}
+category_count %>%
+plot_ly() %>%
+      add_trace(x = ~reorder(category, -percentage), 
+                y = ~percentage,
+                size = ~percentage,
+                color = ~category,
+                text = ~paste0("Category:  ", category, "\n", "Percentage ", percentage),
+                hoverinfo = 'text',
+                type = "scatter",
+                mode = "markers",
+                marker = list(symbol = 'circle', sizemode = 'diameter',
+                              line = list(width = 2, color = '#FFFFFF'), opacity=0.6)) %>%
+      layout( title = "Category of award comparison",
+        showlegend = FALSE,
+        xaxis = list(
+          title = "Category of award"
+        ),
+        yaxis = list(
+          title = "Percentage count of women"
+        )
+      ) %>%
+      config(displayModeBar = FALSE, displaylogo = FALSE, 
+             scrollZoom = FALSE, showAxisDragHandles = TRUE, 
+             showSendToCloud = FALSE)
+```
+
+
+### Using ggplot and packcircles libraries
+```{r}
+
+
+
+    packing.services <- packcircles::circleProgressiveLayout(category_count$percentage, sizetype='area')
+
+    category.packing <- cbind(category_count, packing.services)
+    category.data <- packcircles::circleLayoutVertices(packing.services, npoints=50)
+    category.packing$id<-1:nrow(category.packing)
+    category.data<-dplyr::left_join(category.data,category.packing,by="id")
+    category.data<-category.data[,c(1:5)]
+    colnames(category.data)[1:2]<-c("x","y")
+    
+    # Make the plot
+  ggplot2::ggplot(data = category.data) +
+      geom_polygon(aes(x, y, group = id, fill=str_wrap(category,15), text = paste0("category: ", category)),alpha=.9) +
+      geom_text(data = category.packing, aes(x, y), size=5,label =paste0(category_count$category,"\n",category_count$percentage,"%"), fontface="bold") +
+      theme_void() +
+      theme(legend.position="none",
+            plot.title = element_text(size=20,face="bold",hjust=0.5),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.line = element_blank()) +
+      coord_equal()+
+      ggtitle("Award cagegories of influential women of 2020")+
+      scale_fill_brewer(palette = "Set3",name="")+
+      guides(fill=guide_legend(nrow=1))
+
+```
+
+
+
+## What are the top 10 roles/careers of these influential women?
+
+```{r}
+women$role <- gsub("Human-rights activist","Human rights activist",women$role)
+career_count <- data.table::data.table(women)[2:100,.(count=.N),by=role][order(-count)][1:15]
+
+
+career_count %>%
+  ggplot(aes(x=count, y = reorder(role,count))) +
+  geom_col(fill = "#00688B" ) +
+  labs(title = "Top 10 careers of influential women in 2020", x = "Count", y = "Careers") +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5))
+```
+
